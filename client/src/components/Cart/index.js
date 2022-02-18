@@ -1,12 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { idbPromise } from "../../utils/helpers";
 import CartItem from "../CartItem";
 import Auth from "../../utils/auth";
-import "./style.css";
 import { useStoreContext } from "../../utils/GlobalState";
-import { TOGGLE_CART } from "../../utils/actions";
+import { TOGGLE_CART, ADD_MULTIPLE_TO_CART } from "../../utils/actions";
+import "./style.css";
 
 const Cart = () => {
   const [state, dispatch] = useStoreContext();
+
+  useEffect(() => {
+    async function getCart() {
+      const cart = await idbPromise("cart", "get");
+      dispatch({ type: ADD_MULTIPLE_TO_CART, products: [...cart] });
+    }
+
+    if (!state.cart.length) {
+      getCart();
+    }
+  }, [state.cart.length, dispatch]);
 
   function toggleCart() {
     dispatch({ type: TOGGLE_CART });
@@ -41,8 +53,10 @@ const Cart = () => {
           {state.cart.map((item) => (
             <CartItem key={item._id} item={item} />
           ))}
+
           <div className="flex-row space-between">
             <strong>Total: ${calculateTotal()}</strong>
+
             {Auth.loggedIn() ? (
               <button>Checkout</button>
             ) : (
